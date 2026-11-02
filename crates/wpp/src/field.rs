@@ -155,12 +155,21 @@ mod tests {
     #[test]
     fn event_id_includes_field_types() {
         let format = "Generic values: first={}, second={}";
-        let integer = compute_event_id(format, &["ItemLong", "ItemString"]);
+        let integer = compute_event_id(format, &["ItemLong", "ItemString"], &["!ld!", "!s!"]);
         let irql = compute_event_id(
             format,
             &["ItemListByte(Low,APC,DPC)", "ItemString"],
+            &["!s!", "!s!"],
         );
         assert_ne!(integer, irql);
+    }
+
+    #[test]
+    fn event_id_includes_format_specs() {
+        let format = "value={}";
+        let signed = compute_event_id(format, &["ItemLong"], &["!ld!"]);
+        let unsigned = compute_event_id(format, &["ItemLong"], &["!lu!"]);
+        assert_ne!(signed, unsigned);
     }
 
     #[test]
@@ -314,14 +323,17 @@ impl<const CAPACITY: usize> AnnotationString<CAPACITY> {
 }
 
 /// Computes a stable event ID from a format string and its monomorphized WPP
-/// field types.
+/// field types and format specifiers.
 #[doc(hidden)]
-pub const fn compute_event_id(format: &str, type_names: &[&str]) -> u16 {
+pub const fn compute_event_id(format: &str, type_names: &[&str], format_specs: &[&str]) -> u16 {
+    assert!(type_names.len() == format_specs.len());
     let mut hash = fnv1a_64_update(0xCBF29CE484222325, format.as_bytes());
     let mut index = 0;
     while index < type_names.len() {
         hash = fnv1a_64_update(hash, &[0]);
         hash = fnv1a_64_update(hash, type_names[index].as_bytes());
+        hash = fnv1a_64_update(hash, &[0]);
+        hash = fnv1a_64_update(hash, format_specs[index].as_bytes());
         index += 1;
     }
     ((hash % 65_534) + 1) as u16
