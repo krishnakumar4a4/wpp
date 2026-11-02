@@ -1,0 +1,3 @@
+[build]
+# Required by wdk-build for driver binaries. Mirrors the windows-drivers-rs workspace configuration.
+rustflags = ["-C", "target-feature=+crt-static"]

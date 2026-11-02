@@ -1,5 +1,7 @@
 [workspace]
 members = ["crates/wpp", "crates/wpp-macros"]
+# Driver examples must be excluded since only one WDK configuration per build graph is supported.
+exclude = ["examples/sample-kmdf-safe-driver"]
 resolver = "3"
 
 [workspace.package]
