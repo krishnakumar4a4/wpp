@@ -3,7 +3,6 @@ edition.workspace = true
 name = "wpp-macros"
 version = "0.1.0"
 description = "Proc macros for WPP software tracing in Rust drivers"
-repository.workspace = true
 readme.workspace = true
 license.workspace = true
 

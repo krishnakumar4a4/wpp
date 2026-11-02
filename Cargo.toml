@@ -1,0 +1,19 @@
+[workspace]
+members = ["crates/wpp", "crates/wpp-macros"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85.0"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+wpp = { path = "crates/wpp", version = "0.1.0" }
+wpp-macros = { path = "crates/wpp-macros", version = "0.1.0" }
+proc-macro2 = "1.0.101"
+quote = "1.0.40"
+syn = "2.0.106"
+
+[profile.release]
+lto = true
