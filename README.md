@@ -27,7 +27,7 @@ Each example is built separately from its own directory with `cargo +nightly bui
 
 * [sample-kmdf-safe-driver](./examples/sample-kmdf-safe-driver): KMDF driver
   tracing through ETW and IFR.
-* [user-mode-app](./examples/user-mode-app): Rust console application tracing
+* [test-app](./examples/test-app): Rust console application tracing
   through ETW.
 
 ## License

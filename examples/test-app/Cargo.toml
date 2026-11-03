@@ -1,6 +1,6 @@
 [package]
 edition = "2024"
-name = "user-mode-app"
+name = "test-app"
 version = "0.1.0"
 description = "A simple user-mode Rust application that uses wpp for ETW tracing"
 license = "MIT OR Apache-2.0"

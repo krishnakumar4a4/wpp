@@ -151,7 +151,7 @@ fn main() {
         );
     }
 
-    let name = "wpp-user-mode";
+    let name = "test-app";
     trace!(
         INFO,
         LITERALS, "Done: name={}, total={}, ok={}", name, total, true
