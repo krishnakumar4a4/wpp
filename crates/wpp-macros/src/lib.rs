@@ -14,14 +14,21 @@ use proc_macro::TokenStream;
 /// Must be invoked at the crate root. Generates a provider module and a
 /// `trace!` macro for emitting ETW events with compile-time PDB annotations.
 ///
+/// Each control GUID must be a string literal. Bare GUIDs are not accepted
+/// because Rust cannot tokenize some of them, such as `34746ee9-...`, where a
+/// segment looks like a malformed numeric literal.
+///
 /// # Example
 ///
 /// ```ignore
 /// wpp_control_guids!(
-///     MyProvider 84bdb2e9-829e-41b3-b891-02f454bc2bd7 {
+///     MyProvider "84bdb2e9-829e-41b3-b891-02f454bc2bd7" {
 ///         GENERAL,
 ///         IO,
 ///         CONFIG,
+///     }
+///     OtherProvider "34746ee9-2982-4967-aac1-fece7a3dfc3c" {
+///         NETWORK,
 ///     }
 /// );
 /// ```

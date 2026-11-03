@@ -8,6 +8,7 @@ use quote::quote;
 use syn::{
     Ident,
     LitInt,
+    LitStr,
     Result,
     Token,
     braced,
@@ -99,42 +100,46 @@ impl Parse for ProviderDecl {
 }
 
 fn parse_guid(input: ParseStream) -> Result<String> {
-    let mut raw = String::new();
-    while !input.is_empty() && !input.peek(syn::token::Brace) {
-        let tt: proc_macro2::TokenTree = input.parse()?;
-        match &tt {
-            proc_macro2::TokenTree::Punct(p) => raw.push(p.as_char()),
-            _ => raw.push_str(&tt.to_string()),
-        }
-    }
-    let guid: String = raw.chars().filter(|c| !c.is_whitespace()).collect();
+    // The GUID must be a string literal. Bare GUIDs are split into Rust
+    // tokens before the macro runs, which fails for segments such as
+    // `34746ee9` that look like malformed numeric literals.
+    let lit: LitStr = input.parse().map_err(|error| {
+        syn::Error::new(
+            error.span(),
+            "expected a quoted control GUID, e.g. \"84bdb2e9-829e-41b3-b891-02f454bc2bd7\"",
+        )
+    })?;
+    validate_guid(&lit.value()).map_err(|message| syn::Error::new(lit.span(), message))
+}
+
+fn validate_guid(guid: &str) -> core::result::Result<String, String> {
     let segs: Vec<&str> = guid.split('-').collect();
     if segs.len() != 5 {
-        return Err(input.error(format!(
+        return Err(format!(
             "GUID must have 5 dash-separated segments, found {}: '{}'",
             segs.len(),
             guid
-        )));
+        ));
     }
     let expected_lens = [8, 4, 4, 4, 12];
     for (i, (seg, &exp)) in segs.iter().zip(&expected_lens).enumerate() {
         if seg.len() != exp {
-            return Err(input.error(format!(
+            return Err(format!(
                 "GUID segment {} has length {} (expected {}): '{}'",
                 i,
                 seg.len(),
                 exp,
                 guid
-            )));
+            ));
         }
         if !seg.chars().all(|c| c.is_ascii_hexdigit()) {
-            return Err(input.error(format!(
+            return Err(format!(
                 "GUID segment {} contains non-hex characters: '{}'",
                 i, seg
-            )));
+            ));
         }
     }
-    Ok(guid)
+    Ok(guid.to_string())
 }
 
 pub(super) fn parse_guid_parts(s: &str) -> core::result::Result<GuidParts, String> {
@@ -813,5 +818,42 @@ mod tests {
         assert_eq!(gp.d1, 0x84BDB2E9);
         assert_eq!(gp.d2, 0x829E);
         assert_eq!(gp.d3, 0x41B3);
+    }
+
+    #[test]
+    fn quoted_guid_accepts_segments_rust_cannot_lex() {
+        let input = quote! {
+            App "34746ee9-2982-4967-aac1-fece7a3dfc3c" { GENERAL }
+        };
+        let provider: ProviderDecl = syn::parse2(input).unwrap();
+        assert_eq!(provider.guid_str, "34746ee9-2982-4967-aac1-fece7a3dfc3c");
+        assert_eq!(provider.guid_parts.d1, 0x34746EE9);
+    }
+
+    #[test]
+    fn unquoted_guid_is_rejected() {
+        let input = quote! {
+            App cb94defb-592a-4509-8f2e-54f204929669 { GENERAL }
+        };
+        let error = syn::parse2::<ProviderDecl>(input).err().unwrap();
+        assert!(error.to_string().contains("expected a quoted control GUID"));
+    }
+
+    #[test]
+    fn quoted_guid_with_whitespace_is_rejected() {
+        let input = quote! {
+            App " 34746ee9-2982-4967-aac1-fece7a3dfc3c" { GENERAL }
+        };
+        let error = syn::parse2::<ProviderDecl>(input).err().unwrap();
+        assert!(error.to_string().contains("GUID segment 0 has length 9"));
+    }
+
+    #[test]
+    fn quoted_guid_is_validated() {
+        let input = quote! {
+            App "34746ee9-2982-4967-aac1" { GENERAL }
+        };
+        let error = syn::parse2::<ProviderDecl>(input).err().unwrap();
+        assert!(error.to_string().contains("5 dash-separated segments"));
     }
 }
