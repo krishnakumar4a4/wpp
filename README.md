@@ -10,12 +10,22 @@ WPP software tracing for Rust Windows drivers.
   implementation of the generated `trace!` macro.
 
 The `kernel_mode` feature selects kernel ETW APIs and IFR support. Without this
-feature, the runtime uses user-mode ETW APIs from `onecore_apiset`.
+feature, the runtime uses user-mode ETW APIs from `onecore_apiset`, and the
+generated tracing code omits IFR, which is only available in kernel mode.
 
 Applications expanding tracing macros that emit PDB annotations currently require
 nightly Rust and `#![feature(codeview_annotation)]`. Building and testing the
 crates themselves does not require that feature gate. Linking a kernel-mode
 driver still requires its usual WDK build environment.
+
+## Examples
+
+Each example is built separately from its own directory with `cargo +nightly build`.
+
+* [sample-kmdf-safe-driver](./examples/sample-kmdf-safe-driver): KMDF driver
+  tracing through ETW and IFR.
+* [user-mode-app](./examples/user-mode-app): Rust console application tracing
+  through ETW.
 
 ## License
 

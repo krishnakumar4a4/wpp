@@ -378,7 +378,7 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
             }
 
             // IFR: gated by IFR state auto_log_context (always records when IFR is initialized)
-            {
+            ::wpp::__wpp_kernel_mode_only! {
                 let __wpp_auto_ctx = #ifr_state.auto_log_context();
                 if !__wpp_auto_ctx.is_null() {
                     let mut __wpp_ifr_guid = __WPP_DECODE_GUID;
@@ -428,7 +428,7 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
             }
 
             // IFR: gated by IFR state auto_log_context (always records when IFR is initialized)
-            {
+            ::wpp::__wpp_kernel_mode_only! {
                 let __wpp_auto_ctx = #ifr_state.auto_log_context();
                 if !__wpp_auto_ctx.is_null() {
                     let mut __wpp_ifr_guid = __WPP_DECODE_GUID;

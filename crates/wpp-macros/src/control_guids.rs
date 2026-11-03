@@ -254,8 +254,8 @@ fn generate_provider_module(p: &ProviderDecl, idx: usize) -> TokenStream {
             ///
             /// # Safety
             ///
-            /// `__wpp_ifr::init()` must have been called before this so
-            /// that IFR is ready.
+            /// In kernel mode, `__wpp_ifr::init()` must have been called
+            /// before this so that IFR is ready.
             /// The caller must ensure `clean_up()` is called before the
             /// module containing this provider is unloaded.
             pub unsafe fn init() {
@@ -656,8 +656,10 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
         .collect();
 
     quote! {
+        ::wpp::__wpp_kernel_mode_only! {
         /// IFR (In-Flight Recorder) module — manages control blocks, IFR
-        /// lifecycle, and holds the shared `IFRState`.
+        /// lifecycle, and holds the shared `IFRState`. Only generated when
+        /// `wpp` is built with the `kernel_mode` feature.
         #[allow(non_snake_case)]
         pub mod __wpp_ifr {
             // IFR globals — must live in the consuming crate (not in wpp lib
@@ -796,6 +798,7 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
                     );
                 }
             }
+        }
         }
     }
 }

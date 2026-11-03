@@ -1,0 +1,11 @@
+[package]
+edition = "2024"
+name = "user-mode-app"
+version = "0.1.0"
+description = "A simple user-mode Rust application that uses wpp for ETW tracing"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+# `kernel_mode` is intentionally not enabled: user-mode apps trace through ETW only (no IFR).
+wpp = { path = "../../crates/wpp", version = "0.1.0" }
