@@ -18,6 +18,9 @@ nightly Rust and `#![feature(codeview_annotation)]`. Building and testing the
 crates themselves does not require that feature gate. Linking a kernel-mode
 driver still requires its usual WDK build environment.
 
+Control GUIDs passed to `wpp_control_guids!` must be quoted string literals,
+for example `MyProvider "84bdb2e9-829e-41b3-b891-02f454bc2bd7" { GENERAL }`.
+
 ## Examples
 
 Each example is built separately from its own directory with `cargo +nightly build`.
