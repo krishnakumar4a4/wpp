@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "sample-kmdf-safe-driver"
+name = "kmdf-driver"
 version = "0.1.0"
 description = "A sample KMDF driver that demonstrates KMDF in safe Rust"
 repository = "https://github.com/microsoft/windows-drivers-rs"

@@ -1,4 +1,4 @@
-# Sample KMDF Safe Rust Driver
+# KMDF Driver
 
 A sample driver written in 100% safe Rust demonstrating request processing and cancellation. It mimics the behaviour of the [KMDF Echo Sample](https://github.com/microsoft/Windows-driver-samples/tree/main/general/echo/kmdf) driver in C.
 
@@ -39,9 +39,9 @@ Once prerequisites are installed, run `cargo +nightly build` in this directory t
    5. Repeat 2-4 for Store -> Browse -> Trusted Publishers -> Ok -> Next
    6. Finish
 3. Install the driver:
-   * In the package directory, run: `pnputil.exe /add-driver sample_kmdf_safe_driver.inf /install`
+   * In the package directory, run: `pnputil.exe /add-driver kmdf_driver.inf /install`
 4. Create a software device:
-   * In the directory that `devgen.exe` was copied to, run: `devgen.exe /add /hardwareid "root\SAMPLE_KMDF_SAFE_HW_ID"`
+   * In the directory that `devgen.exe` was copied to, run: `devgen.exe /add /hardwareid "root\KMDF_DRIVER_HW_ID"`
 
 ## Test
 

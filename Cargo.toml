@@ -2,7 +2,7 @@
 members = ["crates/wpp", "crates/wpp-macros"]
 # Driver examples must be excluded since only one WDK configuration per build graph is supported.
 # The user-mode example needs nightly features, so it is built standalone as well.
-exclude = ["examples/sample-kmdf-safe-driver", "examples/test-app"]
+exclude = ["examples/kmdf-driver", "examples/test-app"]
 resolver = "3"
 
 [workspace.package]
