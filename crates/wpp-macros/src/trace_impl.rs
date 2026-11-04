@@ -343,12 +343,12 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
             {
                 let __wpp_kw_val: u64 = #provider_mod::#keyword_ident;
                 if #provider_mod::STATE.is_enabled(#level_expr, __wpp_kw_val) {
-                    let __wpp_evt_desc: ::wpp::etw::EVENT_DESCRIPTOR = ::wpp::etw::EVENT_DESCRIPTOR {
+                    let __wpp_evt_desc = ::wpp::etw::EVENT_DESCRIPTOR {
                         Id: __wpp_event_id, Version: 0, Channel: 0, Level: #level_expr,
                         Opcode: 0, Task: 0, Keyword: #provider_mod::#keyword_ident,
                     };
 
-                    let __wpp_data: [::wpp::etw::EVENT_DATA_DESCRIPTOR; #total_desc_count as usize] = [
+                    let __wpp_data = [
                         #decode_descriptor,
                         #(#data_descriptors),*
                     ];
@@ -393,13 +393,13 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
             {
                 let __wpp_kw_val: u64 = #provider_mod::#keyword_ident;
                 if #provider_mod::STATE.is_enabled(#level_expr, __wpp_kw_val) {
-                    const __WPP_EVT_DESC: ::wpp::etw::EVENT_DESCRIPTOR = ::wpp::etw::EVENT_DESCRIPTOR {
+                    let __WPP_EVT_DESC = ::wpp::etw::EVENT_DESCRIPTOR {
                         Id: #event_id_lit, Version: 0, Channel: 0, Level: #level_expr,
                         Opcode: 0, Task: 0, Keyword: #provider_mod::#keyword_ident,
                     };
 
                     // Only the leading decode-GUID descriptor is sent (no fields).
-                    let __wpp_data: [::wpp::etw::EVENT_DATA_DESCRIPTOR; 1] = [
+                    let __wpp_data = [
                         #decode_descriptor,
                     ];
 

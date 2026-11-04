@@ -157,6 +157,11 @@ fn main() {
         LITERALS, "Done: name={}, total={}, ok={}", name, total, true
     );
 
+    trace!(
+        INFO,
+        LITERALS, "sample trace from app: name={}, ok={}", name, true
+    );
+
     // Generics
     let v1 = 123_i32;
     let v2 = "another-generic-value";
