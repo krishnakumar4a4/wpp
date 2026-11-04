@@ -4,10 +4,17 @@
 //! Trait implemented by types that can be serialized into ETW event data.
 
 use alloc::ffi::CString;
-use core::{ffi::CStr, marker::PhantomData};
+use core::ffi::CStr;
 
+/// A field whose WPP wire representation can be borrowed directly.
+///
 /// The associated constants are resolved during monomorphization, allowing
 /// `codeview_annotation` to emit the concrete type name into the PDB.
+///
+/// The returned bytes must match [`Self::TYPE_NAME`] and [`Self::FORMAT_SPEC`].
+/// Implementations may expose a stored field rather than the whole object.
+/// Any implementation using raw memory must uphold Rust's slice validity
+/// requirements, including never exposing uninitialized padding.
 pub trait WppField {
     /// The WPP reader type used to decode this field from the event payload.
     const TYPE_NAME: &'static str;
@@ -19,43 +26,13 @@ pub trait WppField {
     fn as_bytes(&self) -> &[u8];
 }
 
-/// Contract for external types converted to a WPP wire representation.
-///
-/// # Safety
-///
-/// `Wire` must have no uninitialized padding bytes because its complete object
-/// representation is copied into the trace payload.
-pub unsafe trait WppValue: Copy {
-    /// The initialized wire representation stored in the trace payload.
-    type Wire: Copy;
-
-    /// The WPP reader type used to decode the value.
-    const TYPE_NAME: &'static str;
-
-    /// The WPP printf-style specifier used to render the decoded value.
-    const FORMAT_SPEC: &'static str;
-
-    /// Converts this value into its WPP wire representation.
-    fn into_wire(self) -> Self::Wire;
-}
-
-/// Owned WPP field produced from an external value type.
-pub struct WppValueField<T: WppValue> {
-    wire: T::Wire,
-    marker: PhantomData<T>,
-}
-
-impl<T: WppValue> WppField for WppValueField<T> {
-    const TYPE_NAME: &'static str = T::TYPE_NAME;
+impl<T: WppField + ?Sized> WppField for &T {
     const FORMAT_SPEC: &'static str = T::FORMAT_SPEC;
+    const TYPE_NAME: &'static str = T::TYPE_NAME;
 
+    #[inline]
     fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            core::slice::from_raw_parts(
-                (&raw const self.wire).cast::<u8>(),
-                core::mem::size_of::<T::Wire>(),
-            )
-        }
+        T::as_bytes(*self)
     }
 }
 
@@ -96,7 +73,7 @@ impl_wpp_field! {
     // &[i8] => ("ItemListByte", "!s!"),
 }
 
-impl WppField for &CStr {
+impl WppField for CStr {
     const FORMAT_SPEC: &'static str = "!s!";
     const TYPE_NAME: &'static str = "ItemString";
 
@@ -334,7 +311,9 @@ const fn fnv1a_64_update(mut hash: u64, bytes: &[u8]) -> u64 {
 /// Converts a value into a type that implements [`WppField`].
 ///
 /// For `&str` and `String`, this produces a null-terminated `CString`.
-/// For types that already implement `WppField`, this is a no-op wrapper.
+/// For `f32`, this produces an `f64`.
+/// Types that already implement `WppField`, including references to fields,
+/// pass through unchanged.
 pub trait IntoWppField {
     type Output: WppField;
     fn into_wpp_field(self) -> Self::Output;
@@ -359,24 +338,6 @@ impl IntoWppField for alloc::string::String {
     }
 }
 
-impl<'a> IntoWppField for &'a CStr {
-    type Output = &'a CStr;
-
-    #[inline]
-    fn into_wpp_field(self) -> &'a CStr {
-        self
-    }
-}
-
-impl IntoWppField for CString {
-    type Output = CString;
-
-    #[inline]
-    fn into_wpp_field(self) -> CString {
-        self
-    }
-}
-
 impl IntoWppField for f32 {
     type Output = f64;
 
@@ -395,42 +356,11 @@ impl IntoWppField for &f32 {
     }
 }
 
-impl<T: WppValue> IntoWppField for T {
-    type Output = WppValueField<T>;
+impl<T: WppField> IntoWppField for T {
+    type Output = Self;
 
+    #[inline]
     fn into_wpp_field(self) -> Self::Output {
-        WppValueField {
-            wire: self.into_wire(),
-            marker: PhantomData,
-        }
+        self
     }
-}
-
-macro_rules! impl_into_wpp_field_passthrough {
-    ($($ty:ty),* $(,)?) => {
-        $(
-            impl IntoWppField for $ty {
-                type Output = Self;
-
-                #[inline]
-                fn into_wpp_field(self) -> Self {
-                    self
-                }
-            }
-
-            impl<'a> IntoWppField for &'a $ty {
-                type Output = $ty;
-
-                #[inline]
-                fn into_wpp_field(self) -> $ty {
-                    *self
-                }
-            }
-        )*
-    };
-}
-
-impl_into_wpp_field_passthrough! {
-    i8, u8, i16, u16, i32, u32, i64, u64,
-    f64, bool, usize, isize,
 }

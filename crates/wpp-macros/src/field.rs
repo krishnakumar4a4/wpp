@@ -76,14 +76,20 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
     let type_name = format!("{list_type}({})", entries.join(","));
 
     Ok(quote! {
-        unsafe impl ::wpp::WppValue for #enum_name {
-            type Wire = #wire_type;
-
+        impl ::wpp::WppField for #enum_name {
             const TYPE_NAME: &'static str = #type_name;
             const FORMAT_SPEC: &'static str = "!s!";
 
-            fn into_wire(self) -> Self::Wire {
-                self as #wire_type
+            #[inline]
+            fn as_bytes(&self) -> &[u8] {
+                // SAFETY: The fieldless enum has the selected integer repr,
+                // so its discriminant is initialized and has no padding.
+                unsafe {
+                    core::slice::from_raw_parts(
+                        (self as *const Self).cast::<u8>(),
+                        core::mem::size_of::<#wire_type>(),
+                    )
+                }
             }
         }
     })
@@ -154,7 +160,8 @@ mod tests {
         .unwrap()
         .to_string();
 
-        assert!(output.contains("type Wire = u8"));
+        assert!(output.contains("impl :: wpp :: WppField for State"));
+        assert!(output.contains("size_of :: < u8 >"));
         assert!(output.contains("ItemListByte(Unknown,Starting,Ready)"));
     }
 
@@ -167,7 +174,8 @@ mod tests {
         .unwrap()
         .to_string();
 
-        assert!(output.contains("type Wire = u16"));
+        assert!(output.contains("impl :: wpp :: WppField for State"));
+        assert!(output.contains("size_of :: < u16 >"));
         assert!(output.contains("ItemListShort(Unknown,Warning=10,Failed=100)"));
     }
 
@@ -180,16 +188,19 @@ mod tests {
         .unwrap()
         .to_string();
 
-        assert!(output.contains("type Wire = u32"));
+        assert!(output.contains("impl :: wpp :: WppField for State"));
+        assert!(output.contains("size_of :: < u32 >"));
         assert!(output.contains("ItemListLong(Offline,Online,Recovering)"));
     }
 
     #[test]
     fn rejects_payload_variant() {
-        assert!(generate(syn::parse_quote! {
-            #[repr(u8)]
-            enum State { Value(u8) }
-        })
-        .is_err());
+        assert!(
+            generate(syn::parse_quote! {
+                #[repr(u8)]
+                enum State { Value(u8) }
+            })
+            .is_err()
+        );
     }
 }

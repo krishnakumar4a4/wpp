@@ -12,12 +12,13 @@ extern crate alloc;
 
 pub mod etw;
 pub mod field;
-// IFR (WppRecorder) is kernel-mode only; user-mode builds trace through ETW alone.
+// IFR (WppRecorder) is kernel-mode only; user-mode builds trace through ETW
+// alone.
 #[cfg(feature = "kernel_mode")]
 pub mod ifr;
 pub mod provider;
 
-pub use field::{IntoWppField, WppField, WppValue};
+pub use field::{IntoWppField, WppField};
 #[cfg(feature = "kernel_mode")]
 pub use ifr::IFRState;
 pub use provider::ProviderState;
