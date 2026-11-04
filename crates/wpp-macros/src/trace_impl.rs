@@ -232,15 +232,6 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
                     );
 
                     impl<#(#type_names: ::wpp::WppField),*> Args<#(#type_names),*> {
-                        // TODO: Multiple rust types can match with same WPP TYPE_NAME which results 
-                        // in same EVENT_ID when generics are used.
-                        // Possible solution1: Use FORMAT_SPEC and TYPE_NAME together to compute EVENT_ID
-                        //                      as it generates a unique EVENT_ID that the decoder can use.
-                        // Possible solution2: Introduce an additional RUST_TYPE const and include it in 
-                        //                      the computation of EVENT_ID to ensure uniqueness.
-                        // Possible solution3: Make the EVENT_ID extremely unique by include line number,
-                        // file name, and other compile-time unique identifiers about the trace statement. 
-                        // This solution is as good as generating a random EVENT_ID per each trace statement.
                         const EVENT_ID: u16 = ::wpp::field::compute_event_id(
                             #format_string,
                             &[#(#type_names::TYPE_NAME),*],
