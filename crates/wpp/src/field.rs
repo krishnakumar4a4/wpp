@@ -90,7 +90,7 @@ impl_wpp_field! {
     i64   => ("ItemLongLong", "!I64d!"),
     u64   => ("ItemULongLong", "!I64u!"),
     f64   => ("ItemDouble", "!s!"),
-    // bool  => ("ItemUChar", "!d!"), // TODO: boolean is ItemListLong(false,true) in WPP
+    bool  => ("ItemListByte(false,true)", "!s!"),
     usize => ("ItemULongLong", "!I64u!"), // TODO: on 32 bit machines, this will be 4 bytes, handle it accordingly
     isize => ("ItemLongLong", "!I64d!"),
     // &[i8] => ("ItemListByte", "!s!"),
@@ -113,24 +113,6 @@ impl WppField for CString {
     #[inline]
     fn as_bytes(&self) -> &[u8] {
         CString::as_bytes_with_nul(self)
-    }
-}
-
-const BOOL_TRUE: &[u8] = &[1];
-const BOOL_FALSE: &[u8] = &[0];
-
-impl WppField for bool {
-    const TYPE_NAME: &'static str = "ItemListByte(false,true)";
-    const FORMAT_SPEC: &'static str = "!s!";
-
-    // TODO: implicit conversion from Rust type to C++ type possible as both are single byte size types, 
-    // change this
-    #[inline]
-    fn as_bytes(&self) -> &[u8] {
-        match self {
-            true => BOOL_TRUE,
-            false => BOOL_FALSE,
-        }
     }
 }
 

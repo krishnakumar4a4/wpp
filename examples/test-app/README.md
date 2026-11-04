@@ -23,6 +23,30 @@ cargo +nightly build
 
 ## Capture traces
 
+### Automated capture and decoding
+
+After building, open a PowerShell terminal **as administrator** and run:
+
+```powershell
+.\collect-traces.ps1
+```
+
+The script finds the tools on `PATH` or in the standard Windows Kits 10
+installation, preferring the newest version. To select a WDK version or a
+different build directory:
+
+```powershell
+.\collect-traces.ps1 -WdkBinPath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64'
+.\collect-traces.ps1 -BuildDirectory .\target\release
+```
+
+Paths default to this example's directory, regardless of the terminal's
+working directory. Use the EXE and PDB from the same build. The script
+stops its own trace session even if enabling the second provider or running
+the app fails.
+
+### Manual capture
+
 Run from an elevated prompt in this directory. Enable each provider whose
 traces you want:
 
@@ -47,9 +71,3 @@ $bin = 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64'
 & "$bin\tracefmt.exe" wpp-um.etl -p .\tmf -o wpp-um.txt -nosummary
 Get-Content wpp-um.txt
 ```
-
-The PDB must come from the same build that produced the capture. After
-changing trace messages, rebuild, capture again, and rerun `tracepdb`.
-
-For a GUI, open the ETL in `traceview.exe` from the same folder and select the
-PDB when prompted.
