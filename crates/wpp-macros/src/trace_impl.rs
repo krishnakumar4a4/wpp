@@ -189,9 +189,6 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
 
     // Serialization plumbing (unchanged): argument capture, `IntoWppField`
     // conversion, and raw-byte extraction for ETW / IFR.
-    let arg_names: Vec<Ident> = (0..field_count)
-        .map(|i| format_ident!("__a{}", i))
-        .collect();
     let param_names: Vec<Ident> = (0..field_count)
         .map(|i| format_ident!("__f{}", i))
         .collect();
@@ -338,8 +335,7 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
             #decode_guid_const
 
             // TODO: [P2] When ETW/IFR is disabled, we may want to skip the below work
-            #(let #arg_names = #args;)*
-            #(let #param_names = ::wpp::IntoWppField::into_wpp_field(#arg_names);)*
+            #(let #param_names = ::wpp::IntoWppField::into_wpp_field(#args);)*
             let __wpp_event_id = #annotation_call;
             #(let #bytes_names = ::wpp::WppField::as_bytes(&#param_names);)*
 
