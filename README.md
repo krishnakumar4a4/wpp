@@ -29,8 +29,3 @@ Each example is built separately from its own directory with `cargo +nightly bui
   tracing through ETW and IFR.
 * [test-app](./examples/test-app): Rust console application tracing
   through ETW.
-
-## License
-
-Licensed under either the [MIT license](./LICENSE-MIT) or
-[Apache License 2.0](./LICENSE-APACHE), at your option.
