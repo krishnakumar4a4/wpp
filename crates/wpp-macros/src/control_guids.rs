@@ -274,7 +274,7 @@ fn generate_provider_module(p: &ProviderDecl, idx: usize) -> TokenStream {
             /// module containing this provider is unloaded.
             pub unsafe fn init() {
                 struct Args;
-                impl core::os::windows::CodeViewAnnotationArgs for Args {
+                impl ::core::os::windows::CodeViewAnnotationArgs for Args {
                     const ARGS: &'static [&'static str] = &[
                         "TMC:", #guid_str, #provider_name_str,
                         #(#kw_annotation_strings),*
@@ -285,22 +285,22 @@ fn generate_provider_module(p: &ProviderDecl, idx: usize) -> TokenStream {
                 // control GUID, which under Option B is distinct from the
                 // per-module decode GUIDs that key the TMF records, so TMC and
                 // TMF annotations never share a GUID and cannot collide.
-                core::os::windows::codeview_annotation::<Args>();
+                ::core::os::windows::codeview_annotation::<Args>();
                 if STATE.init_state.compare_exchange(
                     ::wpp::provider::UNINITIALIZED,
                     ::wpp::provider::INITIALIZING,
-                    core::sync::atomic::Ordering::Acquire,
-                    core::sync::atomic::Ordering::Relaxed,
+                    ::core::sync::atomic::Ordering::Acquire,
+                    ::core::sync::atomic::Ordering::Relaxed,
                 ).is_err() {
                     return;
                 }
                 // TODO: [P2] Handle registration error here.
                 let (_, handle) = unsafe { ::wpp::etw::register(
                     control_guid(),
-                    Some(::wpp::provider::enable_callback),
-                    &STATE as *const ::wpp::ProviderState as *mut core::ffi::c_void,
+                    ::core::option::Option::Some(::wpp::provider::enable_callback),
+                    &STATE as *const ::wpp::ProviderState as *mut ::core::ffi::c_void,
                 ) };
-                STATE.reg_handle.store(handle, core::sync::atomic::Ordering::Relaxed);
+                STATE.reg_handle.store(handle, ::core::sync::atomic::Ordering::Relaxed);
                 // ModernWpp (WPPv3): mark this Crimson provider as a WPP
                 // trace-message provider so the kernel stamps the WPP header
                 // flag and tracks the PDB DebugId for TMF decoding, and opt in
@@ -311,7 +311,7 @@ fn generate_provider_module(p: &ProviderDecl, idx: usize) -> TokenStream {
                 unsafe { ::wpp::etw::enable_modern_wpp(handle) };
                 STATE.init_state.store(
                     ::wpp::provider::INITIALIZED,
-                    core::sync::atomic::Ordering::Release,
+                    ::core::sync::atomic::Ordering::Release,
                 );
             }
 
@@ -319,14 +319,14 @@ fn generate_provider_module(p: &ProviderDecl, idx: usize) -> TokenStream {
                 if STATE.init_state.compare_exchange(
                     ::wpp::provider::INITIALIZED,
                     ::wpp::provider::UNINITIALIZED,
-                    core::sync::atomic::Ordering::Acquire,
-                    core::sync::atomic::Ordering::Relaxed,
+                    ::core::sync::atomic::Ordering::Acquire,
+                    ::core::sync::atomic::Ordering::Relaxed,
                 ).is_err() {
                     return;
                 }
-                STATE.enabled_level.store(0, core::sync::atomic::Ordering::Relaxed);
-                STATE.enabled_keywords.store(0, core::sync::atomic::Ordering::Relaxed);
-                let handle = STATE.reg_handle.swap(0, core::sync::atomic::Ordering::Relaxed);
+                STATE.enabled_level.store(0, ::core::sync::atomic::Ordering::Relaxed);
+                STATE.enabled_keywords.store(0, ::core::sync::atomic::Ordering::Relaxed);
+                let handle = STATE.reg_handle.swap(0, ::core::sync::atomic::Ordering::Relaxed);
                 if handle != 0 { unsafe { ::wpp::etw::unregister(handle) }; }
             }
         }
@@ -399,7 +399,7 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
             let name = &v.flag_name;
             let ctrl_idx = proc_macro2::Literal::usize_unsuffixed(v.control_idx);
             let flag_idx = proc_macro2::Literal::usize_unsuffixed(v.flag_idx);
-            quote! { #name => Some(WppFlag::#ident(#ctrl_idx, #flag_idx)) }
+            quote! { #name => ::core::option::Option::Some(Self::#ident(#ctrl_idx, #flag_idx)) }
         })
         .collect();
 
@@ -409,7 +409,7 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
             let ident = &v.variant_ident;
             let ctrl_idx = proc_macro2::Literal::usize_unsuffixed(v.control_idx);
             let flag_idx = proc_macro2::Literal::usize_unsuffixed(v.flag_idx);
-            quote! { WppFlag::#ident(#ctrl_idx, #flag_idx) }
+            quote! { Self::#ident(#ctrl_idx, #flag_idx) }
         })
         .collect();
 
@@ -417,7 +417,7 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
         .iter()
         .map(|v| {
             let ident = &v.variant_ident;
-            quote! { WppFlag::#ident(ctrl, _) => *ctrl }
+            quote! { Self::#ident(ctrl, _) => *ctrl }
         })
         .collect();
 
@@ -425,7 +425,7 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
         .iter()
         .map(|v| {
             let ident = &v.variant_ident;
-            quote! { WppFlag::#ident(_, flag) => *flag }
+            quote! { Self::#ident(_, flag) => *flag }
         })
         .collect();
 
@@ -433,7 +433,7 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
         .iter()
         .map(|v| {
             let ident = &v.variant_ident;
-            quote! { WppFlag::#ident(ctrl, flag) => (*ctrl, *flag) }
+            quote! { Self::#ident(ctrl, flag) => (*ctrl, *flag) }
         })
         .collect();
 
@@ -467,15 +467,15 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
                 }
 
                 #[inline]
-                pub fn by_name(name: &str) -> Option<WppFlag> {
+                pub fn by_name(name: &str) -> ::core::option::Option<Self> {
                     match name {
                         #(#name_match_arms,)*
-                        _ => None
+                        _ => ::core::option::Option::None
                     }
                 }
 
                 #[inline]
-                pub const fn all() -> &'static [WppFlag] {
+                pub const fn all() -> &'static [Self] {
                     &[#(#static_entries),*]
                 }
 
@@ -511,7 +511,7 @@ fn generate_wpp_flag_enum(providers: &[ProviderDecl]) -> TokenStream {
 
             #[inline]
             pub const fn is_verbose_or_below(&self) -> bool {
-                (*self as u8) <= (TraceLevel::Verbose as u8)
+                (*self as u8) <= (Self::Verbose as u8)
             }
         }
 
@@ -661,8 +661,8 @@ fn generate_lifecycle_module(providers: &[ProviderDecl]) -> TokenStream {
             /// serialized; do not change context during an active lifecycle.
             /// Call `cleanup` before unloading the tracing code.
             pub unsafe fn init_driver(
-                driver_object: *mut core::ffi::c_void,
-                registry_path: *const core::ffi::c_void,
+                driver_object: *mut ::core::ffi::c_void,
+                registry_path: *const ::core::ffi::c_void,
             ) {
                 #ifr_init_driver
                 unsafe { init_providers(); }
@@ -708,7 +708,7 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
             /// Do not change context during an active tracing lifecycle.
             #[doc(hidden)]
             pub unsafe fn init() {
-                unsafe { init_raw(core::ptr::null_mut(), core::ptr::null()); }
+                unsafe { init_raw(::core::ptr::null_mut(), ::core::ptr::null()); }
             }
         }
     } else {
@@ -734,7 +734,7 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
     //         let provider_name = p.name.to_string();
     //         let flags: Vec<String> = p.keywords.iter().map(|kw|
     // kw.name.to_string()).collect();         quote! {
-    //             core::os::windows::codeview_annotation!("TMC:", #guid, #provider_name,
+    //             ::core::os::windows::codeview_annotation!("TMC:", #guid, #provider_name,
     // #(#flags),*);         }
     //     })
     //     .collect();
@@ -751,7 +751,7 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
                         as *const ::wpp::ifr::WPP_TRACE_CONTROL_BLOCK
                 }
             } else {
-                quote! { core::ptr::null() }
+                quote! { ::core::ptr::null() }
             };
             quote! {
                 {
@@ -784,7 +784,7 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
             // crate) to avoid LTO bitcode errors with #[no_mangle] statics.
             #[unsafe(no_mangle)]
             static mut WPP_GLOBAL_Control: *mut ::wpp::ifr::WPP_PROJECT_CONTROL_BLOCK =
-                core::ptr::null_mut();
+                ::core::ptr::null_mut();
 
             // ── Control block array types ────────────────────────────────────
 
@@ -793,29 +793,29 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
 
             #[repr(C)]
             union CbType {
-                Control: core::mem::ManuallyDrop<::wpp::ifr::WPP_TRACE_CONTROL_BLOCK>,
+                Control: ::core::mem::ManuallyDrop<::wpp::ifr::WPP_TRACE_CONTROL_BLOCK>,
                 ReserveSpace: [u8;
-                    core::mem::size_of::<::wpp::ifr::WPP_TRACE_CONTROL_BLOCK>()
-                        + core::mem::size_of::<u32>() * (WPP_FLAG_LEN - 1)],
+                    ::core::mem::size_of::<::wpp::ifr::WPP_TRACE_CONTROL_BLOCK>()
+                        + ::core::mem::size_of::<u32>() * (WPP_FLAG_LEN - 1)],
             }
 
             #[repr(transparent)]
             struct ControlBlockArray(
-                core::cell::UnsafeCell<[CbType; CONTROLS_COUNT]>,
+                ::core::cell::UnsafeCell<[CbType; CONTROLS_COUNT]>,
             );
 
-            unsafe impl Sync for ControlBlockArray {}
+            unsafe impl ::core::marker::Sync for ControlBlockArray {}
 
             impl ControlBlockArray {
                 const fn new() -> Self {
                     const INIT: CbType = CbType {
-                        Control: core::mem::ManuallyDrop::new(
+                        Control: ::core::mem::ManuallyDrop::new(
                             ::wpp::ifr::WPP_TRACE_CONTROL_BLOCK::new(
                                 #wpp_flag_len_lit as u8,
                             ),
                         ),
                     };
-                    Self(core::cell::UnsafeCell::new([INIT; CONTROLS_COUNT]))
+                    Self(::core::cell::UnsafeCell::new([INIT; CONTROLS_COUNT]))
                 }
                 fn as_mut_ptr(&self) -> *mut [CbType; CONTROLS_COUNT] {
                     self.0.get()
@@ -856,8 +856,8 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
             /// Do not change context during an active tracing lifecycle.
             #[doc(hidden)]
             pub unsafe fn init_driver(
-                driver_object: *mut core::ffi::c_void,
-                registry_path: *const core::ffi::c_void,
+                driver_object: *mut ::core::ffi::c_void,
+                registry_path: *const ::core::ffi::c_void,
             ) {
                 unsafe { init_raw(driver_object, registry_path); }
             }
@@ -865,14 +865,14 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
             #app_init
 
             unsafe fn init_raw(
-                driver_obj: *mut core::ffi::c_void,
-                reg_path: *const core::ffi::c_void,
+                driver_obj: *mut ::core::ffi::c_void,
+                reg_path: *const ::core::ffi::c_void,
             ) {
                 if STATE.init_state.compare_exchange(
                     ::wpp::ifr::UNINITIALIZED,
                     ::wpp::ifr::INITIALIZING,
-                    core::sync::atomic::Ordering::Acquire,
-                    core::sync::atomic::Ordering::Relaxed,
+                    ::core::sync::atomic::Ordering::Acquire,
+                    ::core::sync::atomic::Ordering::Relaxed,
                 ).is_err() {
                     return;
                 }
@@ -909,7 +909,7 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
 
                 STATE.init_state.store(
                     ::wpp::ifr::INITIALIZED,
-                    core::sync::atomic::Ordering::Release,
+                    ::core::sync::atomic::Ordering::Release,
                 );
             }
 
@@ -925,8 +925,8 @@ fn generate_ifr_module(providers: &[ProviderDecl]) -> TokenStream {
                 if STATE.init_state.compare_exchange(
                     ::wpp::ifr::INITIALIZED,
                     ::wpp::ifr::UNINITIALIZED,
-                    core::sync::atomic::Ordering::Acquire,
-                    core::sync::atomic::Ordering::Relaxed,
+                    ::core::sync::atomic::Ordering::Acquire,
+                    ::core::sync::atomic::Ordering::Relaxed,
                 ).is_err() {
                     return;
                 }
@@ -973,7 +973,7 @@ mod tests {
         let parameters = &driver_init.sig.inputs;
         assert_eq!(
             quote!(#parameters).to_string(),
-            "driver_object : * mut core :: ffi :: c_void , registry_path : * const core :: ffi :: c_void ,"
+            "driver_object : * mut :: core :: ffi :: c_void , registry_path : * const :: core :: ffi :: c_void ,"
         );
         let driver_body = &driver_init.block;
         let driver_body = quote!(#driver_body).to_string();
@@ -1070,7 +1070,7 @@ mod tests {
         let parameters = &driver_init.sig.inputs;
         assert_eq!(
             quote!(#parameters).to_string(),
-            "driver_object : * mut core :: ffi :: c_void , registry_path : * const core :: ffi :: c_void ,"
+            "driver_object : * mut :: core :: ffi :: c_void , registry_path : * const :: core :: ffi :: c_void ,"
         );
         let body = &driver_init.block;
         let body = quote!(#body).to_string();
@@ -1083,7 +1083,9 @@ mod tests {
             let body = &app_init.block;
             let body = quote!(#body).to_string();
             assert!(
-                body.contains("init_raw (core :: ptr :: null_mut () , core :: ptr :: null ())")
+                body.contains(
+                    "init_raw (:: core :: ptr :: null_mut () , :: core :: ptr :: null ())"
+                )
             );
         }
         let raw_init = functions

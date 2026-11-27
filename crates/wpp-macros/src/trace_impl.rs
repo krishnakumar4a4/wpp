@@ -228,7 +228,7 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
                     #(#param_names: &#type_names),*
                 ) -> u16 {
                     struct Args<#(#type_names),*>(
-                        core::marker::PhantomData<(#(#type_names,)*)>
+                        ::core::marker::PhantomData<(#(#type_names,)*)>
                     );
 
                     impl<#(#type_names: ::wpp::WppField),*> Args<#(#type_names),*> {
@@ -256,7 +256,7 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
                     }
 
                     impl<#(#type_names: ::wpp::WppField),*>
-                        core::os::windows::CodeViewAnnotationArgs for Args<#(#type_names),*>
+                        ::core::os::windows::CodeViewAnnotationArgs for Args<#(#type_names),*>
                     {
                         const ARGS: &'static [&'static str] = &[
                             #(#annotation_strings),*,
@@ -267,7 +267,7 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
                         ];
                     }
 
-                    core::os::windows::codeview_annotation::<Args<#(#type_names),*>>();
+                    ::core::os::windows::codeview_annotation::<Args<#(#type_names),*>>();
                     Args::<#(#type_names),*>::EVENT_ID
                 }
 
@@ -280,13 +280,13 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
             {
                 struct Args;
 
-                impl core::os::windows::CodeViewAnnotationArgs for Args {
+                impl ::core::os::windows::CodeViewAnnotationArgs for Args {
                     const ARGS: &'static [&'static str] = &[
                         #(#annotation_strings),*, #typev_line, "{", "}"
                     ];
                 }
 
-                core::os::windows::codeview_annotation::<Args>();
+                ::core::os::windows::codeview_annotation::<Args>();
             }
         }
     };
@@ -308,7 +308,7 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
     let ifr_arg_pairs: Vec<TokenStream> = bytes_names
         .iter()
         .map(|b| {
-            quote! { #b.as_ptr() as *const core::ffi::c_void, #b.len(), }
+            quote! { #b.as_ptr() as *const ::core::ffi::c_void, #b.len(), }
         })
         .collect();
 
@@ -326,7 +326,7 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
     let decode_descriptor = quote! {
         ::wpp::etw::EVENT_DATA_DESCRIPTOR {
             Ptr: &__WPP_DECODE_GUID as *const ::wpp::GUID as usize,
-            Size: core::mem::size_of::<::wpp::GUID>() as u32,
+            Size: ::core::mem::size_of::<::wpp::GUID>() as u32,
             Reserved: ::wpp::etw::EVENT_DATA_DESCRIPTOR_TYPE_RESERVED1,
         }
     };
@@ -353,10 +353,10 @@ fn generate_for_module(parsed: TraceImplInput, module_key: &str) -> Result<Token
                             #level_expr,
                             (#provider_mod::#keyword_ident & 0xFFFF_FFFF) as u32,
                             &mut __wpp_ifr_guid as *mut ::wpp::GUID
-                                as *mut core::ffi::c_void,
+                                as *mut ::core::ffi::c_void,
                             #ifr_event_id,
                             #(#ifr_arg_pairs)*
-                            core::ptr::null::<core::ffi::c_void>(),
+                            ::core::ptr::null::<::core::ffi::c_void>(),
                         )
                     };
                 }

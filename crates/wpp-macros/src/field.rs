@@ -85,9 +85,9 @@ pub fn generate(input: TokenStream) -> Result<TokenStream> {
                 // SAFETY: The fieldless enum has the selected integer repr,
                 // so its discriminant is initialized and has no padding.
                 unsafe {
-                    core::slice::from_raw_parts(
+                    ::core::slice::from_raw_parts(
                         (self as *const Self).cast::<u8>(),
-                        core::mem::size_of::<#wire_type>(),
+                        ::core::mem::size_of::<#wire_type>(),
                     )
                 }
             }
